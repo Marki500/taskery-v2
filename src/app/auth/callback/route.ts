@@ -9,6 +9,7 @@ export async function GET(request: Request) {
     // Use env var for production, fallback to request origin
     const origin = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin
 
+    // Handle OAuth code flow
     if (code) {
         const supabase = await createClient()
         const { error } = await supabase.auth.exchangeCodeForSession(code)
@@ -73,6 +74,70 @@ export async function GET(request: Request) {
         }
     }
 
-    // return the user to an error page with instructions
-    return NextResponse.redirect(`${origin}/auth/auth-code-error`)
+    // If no code, serve HTML that processes hash fragments (for invitation links)
+    return new NextResponse(`
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Procesando invitación...</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div style="text-align: center;">
+        <div class="spinner"></div>
+        <h1>Procesando invitación...</h1>
+    </div>
+    <script>
+        const hash = window.location.hash.substring(1);
+        const params = new URLSearchParams(hash);
+        const accessToken = params.get('access_token');
+        const refreshToken = params.get('refresh_token');
+        
+        if (accessToken && refreshToken) {
+            // Send tokens to server via POST
+            fetch('/api/auth/set-session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ accessToken, refreshToken })
+            }).then(res => res.json())
+              .then(data => {
+                  if (data.success) {
+                      window.location.href = data.redirectTo || '/projects';
+                  } else {
+                      window.location.href = '/login?error=invalid_invite';
+                  }
+              })
+              .catch(() => {
+                  window.location.href = '/login?error=session_error';
+              });
+        } else {
+            window.location.href = '/login?error=no_tokens';
+        }
+    </script>
+</body>
+</html>
+    `, {
+        headers: { 'Content-Type': 'text/html' }
+    })
 }
