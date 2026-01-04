@@ -115,7 +115,7 @@ export default async function ClientsPage() {
                                     <div className="text-muted-foreground/50 italic text-xs">Sin información de contacto</div>
                                 )}
 
-                                <div className="pt-2 flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="pt-2 flex justify-end gap-2">
                                     <InviteClientButton
                                         clientId={client.id}
                                         clientEmail={client.email}
