@@ -2,8 +2,11 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 
 export async function POST(request: Request) {
+    console.log('🔐 NEW SET-SESSION API - Version 2.0 - Processing invitation tokens')
+
     try {
         const { accessToken, refreshToken } = await request.json()
+        console.log('📝 Tokens received:', { hasAccessToken: !!accessToken, hasRefreshToken: !!refreshToken })
 
         if (!accessToken || !refreshToken) {
             return NextResponse.json(

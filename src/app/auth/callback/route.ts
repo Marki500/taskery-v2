@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 
 export async function GET(request: Request) {
+    console.log('🚀 NEW CALLBACK CODE - Version 2.0 - Handling invitation tokens')
+
     const { searchParams } = new URL(request.url)
     const code = searchParams.get('code')
     const next = searchParams.get('next') ?? '/projects'
