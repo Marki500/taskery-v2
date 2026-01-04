@@ -116,7 +116,10 @@ export async function getDashboardStats() {
             completedTasks: 0,
             completedThisWeek: 0,
             weeklyActivity: [],
-            upcomingDeadlines: []
+            upcomingDeadlines: [],
+            productivityScore: 0,
+            tasksByStatus: { todo: 0, inProgress: 0, review: 0, done: 0 },
+            totalHoursThisWeek: 0
         }
     }
 

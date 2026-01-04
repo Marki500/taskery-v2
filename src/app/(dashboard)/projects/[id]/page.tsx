@@ -6,6 +6,7 @@ import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { EditProjectDialog } from "../edit-project-dialog"
+import { ProjectChatButton } from "@/components/projects/project-chat-button"
 
 interface ProjectPageProps {
     params: Promise<{
@@ -65,7 +66,10 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                         </div>
                     </div>
                 </div>
-                <EditProjectDialog project={project} />
+                <div className="flex items-center gap-2">
+                    <ProjectChatButton projectId={project.id} projectName={project.name} />
+                    <EditProjectDialog project={project} />
+                </div>
             </div>
 
             {/* The Kanban Board Area */}

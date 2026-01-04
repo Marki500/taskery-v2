@@ -14,6 +14,7 @@ export interface Project {
     color?: string
     icon?: string
     url?: string | null
+    client_id?: string | null
 }
 
 export async function getProjects(workspaceId?: string): Promise<Project[]> {
@@ -48,7 +49,7 @@ export async function getProjects(workspaceId?: string): Promise<Project[]> {
     return data || []
 }
 
-export async function createProject(name: string, description?: string, color: string = 'indigo', icon: string = 'FolderKanban', url?: string) {
+export async function createProject(name: string, description?: string, color: string = 'indigo', icon: string = 'FolderKanban', url?: string, clientId?: string) {
     const supabase = await createClient()
 
     const { data: { user } } = await supabase.auth.getUser()
@@ -56,6 +57,7 @@ export async function createProject(name: string, description?: string, color: s
 
     // Use active workspace or fallback to default
     let workspaceId: string | undefined
+    let finalClientId = clientId === 'none' ? null : clientId;
 
     const activeWorkspace = await getActiveWorkspace()
 
@@ -102,7 +104,8 @@ export async function createProject(name: string, description?: string, color: s
             status: 'active',
             color: color,
             icon: icon,
-            url: url || null
+            url: url || null,
+            client_id: finalClientId || null
         })
         .select()
         .single()
@@ -133,18 +136,24 @@ export async function getProjectById(id: string): Promise<Project | null> {
     return data
 }
 
-export async function updateProject(id: string, name: string, description?: string | null, color?: string, icon?: string, url?: string | null) {
+export async function updateProject(id: string, name: string, description?: string | null, color?: string, icon?: string, url?: string | null, clientId?: string) {
     const supabase = await createClient()
+
+    const updateData: any = {
+        name,
+        description,
+        color,
+        icon,
+        url: url || null
+    }
+
+    if (clientId !== undefined) {
+        updateData.client_id = clientId === 'none' ? null : clientId
+    }
 
     const { error } = await supabase
         .from('projects')
-        .update({
-            name,
-            description,
-            color,
-            icon,
-            url: url || null
-        })
+        .update(updateData)
         .eq('id', id)
 
     if (error) {

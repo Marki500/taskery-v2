@@ -17,7 +17,8 @@ import {
     Search,
     UserCircle,
     LayoutDashboard,
-    CalendarDays
+    CalendarDays,
+    Users
 } from "lucide-react"
 
 import {
@@ -45,6 +46,7 @@ const sidebarItems = [
     { icon: FolderKanban, label: "Proyectos", href: "/projects" },
     { icon: CalendarDays, label: "Calendario", href: "/calendar" },
     { icon: Timer, label: "Tracking", href: "/tracking" },
+    { icon: Users, label: "Clientes", href: "/clients" },
     { icon: Settings, label: "Configuración", href: "/settings" },
 ]
 

@@ -19,6 +19,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Pencil, FolderKanban, Rocket, Target, Briefcase, Star, Layout, Check } from "lucide-react"
 import { updateProject, Project } from "./project-actions"
 import { cn } from "@/lib/utils"
+import { getClients } from "../clients/actions"
+import { getActiveWorkspace } from "../workspaces/actions"
+import { useEffect } from "react"
 
 interface EditProjectDialogProps {
     project: Project
@@ -53,6 +56,7 @@ export function EditProjectDialog({ project }: EditProjectDialogProps) {
     const [url, setUrl] = useState(project.url || "")
     const [color, setColor] = useState(project.color || 'indigo')
     const [iconName, setIconName] = useState(project.icon || 'FolderKanban')
+    const [clientId, setClientId] = useState(project.client_id || "none")
     const [isLoading, setIsLoading] = useState(false)
     const router = useRouter()
 
@@ -62,7 +66,7 @@ export function EditProjectDialog({ project }: EditProjectDialogProps) {
 
         setIsLoading(true)
         try {
-            await updateProject(project.id, name.trim(), description.trim() || null, color, iconName, url.trim() || null)
+            await updateProject(project.id, name.trim(), description.trim() || null, color, iconName, url.trim() || null, clientId)
             toast.success("Proyecto actualizado")
             setOpen(false)
             router.refresh()
@@ -169,6 +173,10 @@ export function EditProjectDialog({ project }: EditProjectDialogProps) {
                                 })}
                             </div>
                         </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="client" className="text-lg">Cliente (Opcional)</Label>
+                            <ClientSelect value={clientId} onChange={setClientId} />
+                        </div>
                     </div>
                     <DialogFooter>
                         <Button type="button" variant="outline" onClick={() => setOpen(false)} className="text-lg py-4">
@@ -181,5 +189,33 @@ export function EditProjectDialog({ project }: EditProjectDialogProps) {
                 </form>
             </DialogContent>
         </Dialog>
+    )
+}
+
+function ClientSelect({ value, onChange }: { value: string, onChange: (val: string) => void }) {
+    const [list, setList] = useState<any[]>([])
+
+    useEffect(() => {
+        const load = async () => {
+            const ws = await getActiveWorkspace()
+            if (ws) {
+                const data = await getClients(ws.id)
+                setList(data)
+            }
+        }
+        load()
+    }, [])
+
+    return (
+        <select
+            className="flex h-12 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+        >
+            <option value="none">Ninguno</option>
+            {list.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+        </select>
     )
 }
