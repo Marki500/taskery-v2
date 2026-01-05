@@ -117,11 +117,13 @@ export default async function ClientsPage() {
 
                                 <div className="pt-2 flex justify-end gap-2">
                                     <InviteClientButton
+                                        key={`invite-${client.id}`}
                                         clientId={client.id}
                                         clientEmail={client.email}
                                         hasUser={!!client.user_id}
                                     />
                                     <ClientDialog
+                                        key={`edit-${client.id}`}
                                         workspaceId={workspaceId}
                                         client={client}
                                         trigger={
@@ -131,6 +133,7 @@ export default async function ClientsPage() {
                                         }
                                     />
                                     <NewProjectDialog
+                                        key={`project-${client.id}`}
                                         defaultClientId={client.id}
                                         trigger={
                                             <Button variant="ghost" size="sm" className="h-8 text-xs">
