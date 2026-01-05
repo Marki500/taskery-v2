@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Plus } from "lucide-react"
-import { createProject } from "./project-actions"
+import { createProject, assignMemberToProject } from "./project-actions"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { getClients } from "../clients/actions"
@@ -24,9 +24,10 @@ import { useEffect } from "react"
 interface NewProjectDialogProps {
     defaultClientId?: string
     trigger?: React.ReactNode
+    workspaceMembers?: any[]
 }
 
-export function NewProjectDialog({ defaultClientId, trigger }: NewProjectDialogProps = {}) {
+export function NewProjectDialog({ defaultClientId, trigger, workspaceMembers = [] }: NewProjectDialogProps = {}) {
     const [open, setOpen] = useState(false)
     const [name, setName] = useState("")
     const [description, setDescription] = useState("")
@@ -34,6 +35,7 @@ export function NewProjectDialog({ defaultClientId, trigger }: NewProjectDialogP
     const [color, setColor] = useState('indigo')
     const [icon, setIcon] = useState('FolderKanban')
     const [clientId, setClientId] = useState(defaultClientId || "")
+    const [selectedMembers, setSelectedMembers] = useState<string[]>([])
     const [isLoading, setIsLoading] = useState(false)
     const router = useRouter()
 
@@ -47,10 +49,19 @@ export function NewProjectDialog({ defaultClientId, trigger }: NewProjectDialogP
         setIsLoading(true)
         try {
             const project = await createProject(name.trim(), description.trim() || undefined, color, icon, url.trim() || undefined, clientId || undefined)
+
+            // Assign selected members to the project
+            if (selectedMembers.length > 0) {
+                await Promise.all(
+                    selectedMembers.map(userId => assignMemberToProject(project.id, userId))
+                )
+            }
+
             toast.success("Proyecto creado correctamente")
             setName("")
             setDescription("")
             setUrl("")
+            setSelectedMembers([])
             setOpen(false)
             // Navigate to the new project
             router.push(`/projects/${project.id}`)
@@ -118,6 +129,37 @@ export function NewProjectDialog({ defaultClientId, trigger }: NewProjectDialogP
                             <Label htmlFor="client" className="text-lg">Cliente (Opcional)</Label>
                             <ClientSelect value={clientId} onChange={setClientId} />
                         </div>
+
+                        {/* Member Selection */}
+                        {workspaceMembers.length > 0 && (
+                            <div className="grid gap-2">
+                                <Label className="text-lg">Asignar Miembros (Opcional)</Label>
+                                <div className="flex flex-wrap gap-2">
+                                    {workspaceMembers.map((member) => (
+                                        <Button
+                                            key={member.user_id}
+                                            type="button"
+                                            variant={selectedMembers.includes(member.user_id) ? "default" : "outline"}
+                                            size="sm"
+                                            onClick={() => {
+                                                setSelectedMembers(prev =>
+                                                    prev.includes(member.user_id)
+                                                        ? prev.filter(id => id !== member.user_id)
+                                                        : [...prev, member.user_id]
+                                                )
+                                            }}
+                                        >
+                                            {member.profiles?.full_name || member.profiles?.email || 'Usuario'}
+                                        </Button>
+                                    ))}
+                                </div>
+                                {selectedMembers.length > 0 && (
+                                    <p className="text-xs text-muted-foreground">
+                                        {selectedMembers.length} miembro(s) seleccionado(s)
+                                    </p>
+                                )}
+                            </div>
+                        )}
                     </div>
                     <DialogFooter>
                         <Button type="submit" disabled={isLoading} className="w-full text-lg py-4">

@@ -56,7 +56,7 @@ export default async function ProjectsPage() {
                     </p>
                 </div>
                 <div className="relative z-10">
-                    {projects.length >= 0 && <NewProjectDialog />}
+                    {projects.length >= 0 && <NewProjectDialog workspaceMembers={workspaceMembers} />}
                 </div>
             </div>
 

@@ -61,7 +61,7 @@ export async function getTasksWithDeadlines(): Promise<TaskWithDeadline[]> {
     }))
 }
 
-export async function getDashboardStats() {
+export async function getDashboardStats(filter: 'all' | 'assigned' = 'all') {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -97,17 +97,31 @@ export async function getDashboardStats() {
     if (!memberships?.length) return emptyStats
     const workspaceIds = memberships.map(m => m.workspace_id)
 
-    // Get projects
-    const { data: projects, error: projectsError } = await supabase
+    // Get projects with members
+    const { data: projectsData, error: projectsError } = await supabase
         .from('projects')
-        .select('id, name')
+        .select(`
+            id,
+            name,
+            project_members (
+                user_id
+            )
+        `)
         .in('workspace_id', workspaceIds)
 
     console.log('🔍 DEBUG getDashboardStats - Workspace IDs:', workspaceIds)
-    console.log('🔍 DEBUG getDashboardStats - Projects:', projects)
+    console.log('🔍 DEBUG getDashboardStats - Projects:', projectsData)
     console.log('🔍 DEBUG getDashboardStats - Projects Error:', projectsError)
 
-    const projectIds = projects?.map(p => p.id) || []
+    // Apply filter
+    let projects = projectsData || []
+    if (filter === 'assigned') {
+        projects = projects.filter((project: any) =>
+            project.project_members?.some((member: any) => member.user_id === user.id)
+        )
+    }
+
+    const projectIds = projects?.map((p: any) => p.id) || []
 
     if (projectIds.length === 0) {
         return {
