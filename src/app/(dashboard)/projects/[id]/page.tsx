@@ -30,7 +30,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
         notFound()
     }
 
-    // Get workspace members
+    // Get workspace members (excluding clients)
     const { data: membership } = await supabase
         .from('workspace_members')
         .select('workspace_id')
@@ -39,10 +39,11 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 
     let workspaceMembers: any[] = []
     if (membership) {
-        const { data } = await supabase
+        const { data, error } = await supabase
             .from('workspace_members')
             .select(`
                 user_id,
+                role,
                 profiles (
                     id,
                     full_name,
@@ -51,8 +52,14 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                 )
             `)
             .eq('workspace_id', membership.workspace_id)
+            .neq('role', 'client')  // Exclude clients
+
+        if (error) {
+            console.error('Error fetching workspace members:', error)
+        }
 
         workspaceMembers = data || []
+        console.log('Workspace members:', workspaceMembers)
     }
 
     return (

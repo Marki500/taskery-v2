@@ -28,6 +28,7 @@ export default async function ProjectsPage() {
             .from('workspace_members')
             .select(`
                 user_id,
+                role,
                 profiles (
                     id,
                     full_name,
@@ -36,6 +37,7 @@ export default async function ProjectsPage() {
                 )
             `)
             .eq('workspace_id', membership.workspace_id)
+            .neq('role', 'client')  // Exclude clients
 
         workspaceMembers = data || []
     }
