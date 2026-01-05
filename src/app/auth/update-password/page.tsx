@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import { Button } from '@/components/ui/button'
@@ -14,8 +14,19 @@ export default function UpdatePasswordPage() {
     const [password, setPassword] = useState('')
     const [confirmPassword, setConfirmPassword] = useState('')
     const [loading, setLoading] = useState(false)
+    const [email, setEmail] = useState<string | null>(null)
     const router = useRouter()
     const supabase = createClient()
+
+    useEffect(() => {
+        const getUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (user?.email) {
+                setEmail(user.email)
+            }
+        }
+        getUser()
+    }, [])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -40,11 +51,13 @@ export default function UpdatePasswordPage() {
             if (error) {
                 toast.error(error.message)
             } else {
-                toast.success('Contraseña establecida correctamente')
-                router.push('/client-portal')
+                toast.success('Cuenta activada correctamente')
+                // Sign out to force manual login
+                await supabase.auth.signOut()
+                router.push('/login?activated=true')
             }
         } catch (error) {
-            toast.error('Ocurrió un error al actualizar la contraseña')
+            toast.error('Ocurrió un error al activar la cuenta')
         } finally {
             setLoading(false)
         }
@@ -54,10 +67,17 @@ export default function UpdatePasswordPage() {
         <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
             <Card className="w-full max-w-md">
                 <CardHeader className="space-y-1">
-                    <CardTitle className="text-2xl font-bold">Activar Cuenta</CardTitle>
-                    <CardDescription>
-                        Establece una contraseña para tu cuenta de cliente
+                    <CardTitle className="text-2xl font-bold">Activar Cuenta de Cliente</CardTitle>
+                    <CardDescription className="text-base mt-2">
+                        {email ? (
+                            <span>Establece una contraseña para <strong>{email}</strong>.</span>
+                        ) : (
+                            "Establece una contraseña para tu cuenta."
+                        )}
                     </CardDescription>
+                    <p className="text-sm text-muted-foreground mt-2">
+                        Una vez activada, podrás iniciar sesión en el portal para gestionar tu proyecto.
+                    </p>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-4">
@@ -85,7 +105,7 @@ export default function UpdatePasswordPage() {
                         </div>
                         <Button type="submit" className="w-full" disabled={loading}>
                             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Activar Cuenta y Entrar
+                            Activar Cuenta
                         </Button>
                     </form>
                 </CardContent>

@@ -37,7 +37,7 @@ export async function POST(request: Request) {
             .eq('user_id', data.user.id)
             .single()
 
-        const redirectTo = clientData ? '/client-portal' : '/projects'
+        const redirectTo = clientData ? '/auth/update-password' : '/projects'
 
         return NextResponse.json({
             success: true,
