@@ -52,7 +52,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                 )
             `)
             .eq('workspace_id', membership.workspace_id)
-            .neq('role', 'client')  // Exclude clients
+            .in('role', ['admin', 'member'])  // Only admins and members, not clients
 
         if (error) {
             console.error('Error fetching workspace members:', error)
