@@ -204,35 +204,41 @@ export function EditProjectDialog({ project, workspaceMembers = [] }: EditProjec
                         </div>
 
                         {/* Member Selection */}
-                        {workspaceMembers.length > 0 && (
-                            <div className="grid gap-2">
-                                <Label className="text-lg font-bold">Miembros Asignados</Label>
-                                <div className="flex flex-wrap gap-2">
-                                    {workspaceMembers.map((member) => (
-                                        <Button
-                                            key={member.user_id}
-                                            type="button"
-                                            variant={selectedMembers.includes(member.user_id) ? "default" : "outline"}
-                                            size="sm"
-                                            onClick={() => {
-                                                setSelectedMembers(prev =>
-                                                    prev.includes(member.user_id)
-                                                        ? prev.filter(id => id !== member.user_id)
-                                                        : [...prev, member.user_id]
-                                                )
-                                            }}
-                                        >
-                                            {member.profiles?.full_name || member.profiles?.email || 'Usuario'}
-                                        </Button>
-                                    ))}
-                                </div>
-                                {selectedMembers.length > 0 && (
-                                    <p className="text-xs text-muted-foreground">
-                                        {selectedMembers.length} miembro(s) asignado(s)
-                                    </p>
-                                )}
-                            </div>
-                        )}
+                        <div className="grid gap-2">
+                            <Label className="text-lg font-bold">Miembros Asignados</Label>
+                            {workspaceMembers.length > 0 ? (
+                                <>
+                                    <div className="flex flex-wrap gap-2">
+                                        {workspaceMembers.map((member) => (
+                                            <Button
+                                                key={member.user_id}
+                                                type="button"
+                                                variant={selectedMembers.includes(member.user_id) ? "default" : "outline"}
+                                                size="sm"
+                                                onClick={() => {
+                                                    setSelectedMembers(prev =>
+                                                        prev.includes(member.user_id)
+                                                            ? prev.filter(id => id !== member.user_id)
+                                                            : [...prev, member.user_id]
+                                                    )
+                                                }}
+                                            >
+                                                {member.profiles?.full_name || member.profiles?.email || 'Usuario'}
+                                            </Button>
+                                        ))}
+                                    </div>
+                                    {selectedMembers.length > 0 && (
+                                        <p className="text-xs text-muted-foreground">
+                                            {selectedMembers.length} miembro(s) asignado(s)
+                                        </p>
+                                    )}
+                                </>
+                            ) : (
+                                <p className="text-sm text-muted-foreground">
+                                    No hay otros miembros en el workspace. Invita colaboradores para asignarlos a proyectos.
+                                </p>
+                            )}
+                        </div>
                     </div>
                     <DialogFooter>
                         <Button type="button" variant="outline" onClick={() => setOpen(false)} className="text-lg py-4">
