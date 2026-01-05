@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useTransition } from "react"
 import Link from "next/link"
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -43,9 +43,9 @@ interface ProjectsListProps {
 export function ProjectsList({ workspaceMembers = [] }: ProjectsListProps) {
     const [search, setSearch] = useState('')
     const { filter, setFilter } = useProjectFilter()
-    const [projects, setProjects] = useState<Project[]>([])  // Start with empty array
-    const [loading, setLoading] = useState(true)  // Start with loading true
-    const [isInitialized, setIsInitialized] = useState(false)
+    const [projects, setProjects] = useState<Project[]>([])
+    const [loading, setLoading] = useState(true)
+    const [isPending, startTransition] = useTransition()
 
     // Fetch projects when filter changes or on mount
     useEffect(() => {
@@ -53,12 +53,14 @@ export function ProjectsList({ workspaceMembers = [] }: ProjectsListProps) {
             setLoading(true)
             try {
                 const data = await getProjectsWithMembers(filter)
-                setProjects(data)
+                // Use startTransition to defer the update
+                startTransition(() => {
+                    setProjects(data)
+                    setLoading(false)
+                })
             } catch (error) {
                 console.error('Error loading projects:', error)
-            } finally {
                 setLoading(false)
-                setIsInitialized(true)
             }
         }
         loadProjects()
