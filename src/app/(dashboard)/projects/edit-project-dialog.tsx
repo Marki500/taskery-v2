@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import {
@@ -17,14 +17,14 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Pencil, FolderKanban, Rocket, Target, Briefcase, Star, Layout, Check } from "lucide-react"
-import { updateProject, Project } from "./project-actions"
+import { updateProject, Project, getProjectMembers, assignMemberToProject, removeMemberFromProject } from "./project-actions"
 import { cn } from "@/lib/utils"
 import { getClients } from "../clients/actions"
 import { getActiveWorkspace } from "../workspaces/actions"
-import { useEffect } from "react"
 
 interface EditProjectDialogProps {
     project: Project
+    workspaceMembers?: any[]
 }
 
 const colors = [
@@ -49,7 +49,7 @@ const icons = [
     { name: 'Layout', icon: Layout },
 ]
 
-export function EditProjectDialog({ project }: EditProjectDialogProps) {
+export function EditProjectDialog({ project, workspaceMembers = [] }: EditProjectDialogProps) {
     const [open, setOpen] = useState(false)
     const [name, setName] = useState(project.name)
     const [description, setDescription] = useState(project.description || "")
@@ -57,8 +57,23 @@ export function EditProjectDialog({ project }: EditProjectDialogProps) {
     const [color, setColor] = useState(project.color || 'indigo')
     const [iconName, setIconName] = useState(project.icon || 'FolderKanban')
     const [clientId, setClientId] = useState(project.client_id || "none")
+    const [selectedMembers, setSelectedMembers] = useState<string[]>([])
+    const [initialMembers, setInitialMembers] = useState<string[]>([])
     const [isLoading, setIsLoading] = useState(false)
     const router = useRouter()
+
+    // Load current project members when dialog opens
+    useEffect(() => {
+        if (open) {
+            const loadMembers = async () => {
+                const members = await getProjectMembers(project.id)
+                const memberIds = members.map((m: any) => m.user_id)
+                setSelectedMembers(memberIds)
+                setInitialMembers(memberIds)
+            }
+            loadMembers()
+        }
+    }, [open, project.id])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -67,6 +82,16 @@ export function EditProjectDialog({ project }: EditProjectDialogProps) {
         setIsLoading(true)
         try {
             await updateProject(project.id, name.trim(), description.trim() || null, color, iconName, url.trim() || null, clientId)
+
+            // Update project members
+            const membersToAdd = selectedMembers.filter(id => !initialMembers.includes(id))
+            const membersToRemove = initialMembers.filter(id => !selectedMembers.includes(id))
+
+            await Promise.all([
+                ...membersToAdd.map(userId => assignMemberToProject(project.id, userId)),
+                ...membersToRemove.map(userId => removeMemberFromProject(project.id, userId))
+            ])
+
             toast.success("Proyecto actualizado")
             setOpen(false)
             router.refresh()
@@ -177,6 +202,37 @@ export function EditProjectDialog({ project }: EditProjectDialogProps) {
                             <Label htmlFor="client" className="text-lg">Cliente (Opcional)</Label>
                             <ClientSelect value={clientId} onChange={setClientId} />
                         </div>
+
+                        {/* Member Selection */}
+                        {workspaceMembers.length > 0 && (
+                            <div className="grid gap-2">
+                                <Label className="text-lg font-bold">Miembros Asignados</Label>
+                                <div className="flex flex-wrap gap-2">
+                                    {workspaceMembers.map((member) => (
+                                        <Button
+                                            key={member.user_id}
+                                            type="button"
+                                            variant={selectedMembers.includes(member.user_id) ? "default" : "outline"}
+                                            size="sm"
+                                            onClick={() => {
+                                                setSelectedMembers(prev =>
+                                                    prev.includes(member.user_id)
+                                                        ? prev.filter(id => id !== member.user_id)
+                                                        : [...prev, member.user_id]
+                                                )
+                                            }}
+                                        >
+                                            {member.profiles?.full_name || member.profiles?.email || 'Usuario'}
+                                        </Button>
+                                    ))}
+                                </div>
+                                {selectedMembers.length > 0 && (
+                                    <p className="text-xs text-muted-foreground">
+                                        {selectedMembers.length} miembro(s) asignado(s)
+                                    </p>
+                                )}
+                            </div>
+                        )}
                     </div>
                     <DialogFooter>
                         <Button type="button" variant="outline" onClick={() => setOpen(false)} className="text-lg py-4">

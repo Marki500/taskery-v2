@@ -6,9 +6,8 @@ import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/comp
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { FolderKanban, Clock, ArrowRight, Rocket, Target, Briefcase, Star, Layout, Users } from "lucide-react"
+import { FolderKanban, Clock, ArrowRight, Rocket, Target, Briefcase, Star, Layout } from "lucide-react"
 import { NewProjectDialog } from "./new-project-dialog"
-import { ProjectMembersDialog } from "./project-members-dialog"
 import { ProjectFilterToggle } from "@/components/project-filter-toggle"
 import { cn } from "@/lib/utils"
 import { ProjectSearch } from "./project-search"
@@ -116,103 +115,82 @@ export function ProjectsList({ initialProjects, workspaceMembers = [] }: Project
                         }
 
                         return (
-                            <div key={project.id} className="relative group">
-                                <Link href={`/projects/${project.id}`}>
-                                    <Card className="h-full border-0 shadow-2xl bg-white dark:bg-slate-900 ring-1 ring-slate-200 dark:ring-slate-800 dark:hover:ring-indigo-500/30 transition-all duration-300 dark:shadow-[0_0_30px_-10px_rgba(99,102,241,0.1)] group relative overflow-hidden">
-                                        {/* Hover Gradient */}
-                                        <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/50 via-transparent to-transparent dark:from-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                            <Link key={project.id} href={`/projects/${project.id}`}>
+                                <Card className="h-full border-0 shadow-2xl bg-white dark:bg-slate-900 ring-1 ring-slate-200 dark:ring-slate-800 dark:hover:ring-indigo-500/30 transition-all duration-300 dark:shadow-[0_0_30px_-10px_rgba(99,102,241,0.1)] group relative overflow-hidden">
+                                    {/* Hover Gradient */}
+                                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/50 via-transparent to-transparent dark:from-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-                                        <CardHeader className="pb-3 relative z-10">
-                                            <div className="flex items-start justify-between">
-                                                <div className={cn(
-                                                    "p-3 rounded-xl shadow-lg text-white bg-gradient-to-br flex items-center justify-center overflow-hidden ring-1 ring-white/20 group-hover:scale-110 transition-transform duration-300",
-                                                    colorGradient,
-                                                    faviconUrl && "p-0 h-12 w-12 bg-white" // White background for favicon
-                                                )}>
-                                                    {faviconUrl ? (
-                                                        <img
-                                                            src={faviconUrl}
-                                                            alt={project.name}
-                                                            className="w-full h-full object-contain p-2"
-                                                            onError={(e) => {
-                                                                // Fallback if image fails to load
-                                                                const target = e.target as HTMLImageElement
-                                                                target.style.display = 'none'
-                                                                const parent = target.parentElement
-                                                                if (parent) {
-                                                                    parent.classList.remove('p-0', 'bg-white')
-                                                                    parent.classList.add('p-3')
-                                                                }
-                                                            }}
-                                                        />
-                                                    ) : (
-                                                        <Icon className="h-6 w-6" />
-                                                    )}
-                                                </div>
-                                                <Badge variant={project.status === 'active' ? 'default' : 'secondary'} className="uppercase text-[10px] font-black tracking-widest px-2.5 py-1 border border-indigo-100 dark:border-indigo-500/30">
-                                                    {project.status === 'active' ? 'Activo' : project.status}
-                                                </Badge>
-                                            </div>
-                                            <CardTitle className="text-2xl mt-4 text-slate-800 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors font-black tracking-tight">
-                                                {project.name}
-                                            </CardTitle>
-                                            <CardDescription className="text-base line-clamp-2 min-h-[3rem] font-medium leading-relaxed text-slate-500 dark:text-slate-400">
-                                                {project.description || 'Sin descripción'}
-                                            </CardDescription>
-                                        </CardHeader>
-                                        <CardFooter className="flex items-center justify-between text-xs font-bold text-slate-400 dark:text-slate-500 pt-4 border-t border-slate-100 dark:border-slate-800/50 relative z-10">
-                                            <div className="flex items-center gap-3">
-                                                <div className="flex items-center gap-1.5">
-                                                    <Clock className="h-3.5 w-3.5" />
-                                                    <span>{new Date(project.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</span>
-                                                </div>
-
-                                                {/* Members Avatars */}
-                                                {members.length > 0 && (
-                                                    <div className="flex -space-x-2">
-                                                        {members.slice(0, 3).map((member: any) => (
-                                                            <Avatar key={member.user_id} className="h-6 w-6 border-2 border-background">
-                                                                <AvatarImage src={member.profiles?.avatar_url || undefined} />
-                                                                <AvatarFallback className="text-[10px]">
-                                                                    {(member.profiles?.full_name || member.profiles?.email || '?')[0].toUpperCase()}
-                                                                </AvatarFallback>
-                                                            </Avatar>
-                                                        ))}
-                                                        {members.length > 3 && (
-                                                            <div className="flex items-center justify-center h-6 w-6 rounded-full bg-muted text-[10px] font-bold border-2 border-background">
-                                                                +{members.length - 3}
-                                                            </div>
-                                                        )}
-                                                    </div>
+                                    <CardHeader className="pb-3 relative z-10">
+                                        <div className="flex items-start justify-between">
+                                            <div className={cn(
+                                                "p-3 rounded-xl shadow-lg text-white bg-gradient-to-br flex items-center justify-center overflow-hidden ring-1 ring-white/20 group-hover:scale-110 transition-transform duration-300",
+                                                colorGradient,
+                                                faviconUrl && "p-0 h-12 w-12 bg-white" // White background for favicon
+                                            )}>
+                                                {faviconUrl ? (
+                                                    <img
+                                                        src={faviconUrl}
+                                                        alt={project.name}
+                                                        className="w-full h-full object-contain p-2"
+                                                        onError={(e) => {
+                                                            // Fallback if image fails to load
+                                                            const target = e.target as HTMLImageElement
+                                                            target.style.display = 'none'
+                                                            const parent = target.parentElement
+                                                            if (parent) {
+                                                                parent.classList.remove('p-0', 'bg-white')
+                                                                parent.classList.add('p-3')
+                                                            }
+                                                        }}
+                                                    />
+                                                ) : (
+                                                    <Icon className="h-6 w-6" />
                                                 )}
                                             </div>
-                                            <div className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0 font-bold uppercase tracking-wider">
-                                                <span>Abrir</span>
-                                                <ArrowRight className="h-3.5 w-3.5" />
+                                            <Badge variant={project.status === 'active' ? 'default' : 'secondary'} className="uppercase text-[10px] font-black tracking-widest px-2.5 py-1 border border-indigo-100 dark:border-indigo-500/30">
+                                                {project.status === 'active' ? 'Activo' : project.status}
+                                            </Badge>
+                                        </div>
+                                        <CardTitle className="text-2xl mt-4 text-slate-800 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors font-black tracking-tight">
+                                            {project.name}
+                                        </CardTitle>
+                                        <CardDescription className="text-base line-clamp-2 min-h-[3rem] font-medium leading-relaxed text-slate-500 dark:text-slate-400">
+                                            {project.description || 'Sin descripción'}
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardFooter className="flex items-center justify-between text-xs font-bold text-slate-400 dark:text-slate-500 pt-4 border-t border-slate-100 dark:border-slate-800/50 relative z-10">
+                                        <div className="flex items-center gap-3">
+                                            <div className="flex items-center gap-1.5">
+                                                <Clock className="h-3.5 w-3.5" />
+                                                <span>{new Date(project.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</span>
                                             </div>
-                                        </CardFooter>
-                                    </Card>
-                                </Link>
 
-                                {/* Manage Members Button (appears on hover) */}
-                                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                                    <ProjectMembersDialog
-                                        projectId={project.id}
-                                        projectName={project.name}
-                                        workspaceMembers={workspaceMembers}
-                                        trigger={
-                                            <Button
-                                                variant="secondary"
-                                                size="sm"
-                                                className="shadow-lg"
-                                                onClick={(e) => e.preventDefault()}
-                                            >
-                                                <Users className="h-4 w-4" />
-                                            </Button>
-                                        }
-                                    />
-                                </div>
-                            </div>
+                                            {/* Members Avatars */}
+                                            {members.length > 0 && (
+                                                <div className="flex -space-x-2">
+                                                    {members.slice(0, 3).map((member: any) => (
+                                                        <Avatar key={member.user_id} className="h-6 w-6 border-2 border-background">
+                                                            <AvatarImage src={member.profiles?.avatar_url || undefined} />
+                                                            <AvatarFallback className="text-[10px]">
+                                                                {(member.profiles?.full_name || member.profiles?.email || '?')[0].toUpperCase()}
+                                                            </AvatarFallback>
+                                                        </Avatar>
+                                                    ))}
+                                                    {members.length > 3 && (
+                                                        <div className="flex items-center justify-center h-6 w-6 rounded-full bg-muted text-[10px] font-bold border-2 border-background">
+                                                            +{members.length - 3}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0 font-bold uppercase tracking-wider">
+                                            <span>Abrir</span>
+                                            <ArrowRight className="h-3.5 w-3.5" />
+                                        </div>
+                                    </CardFooter>
+                                </Card>
+                            </Link>
                         )
                     })}
                 </div>

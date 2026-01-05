@@ -30,6 +30,31 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
         notFound()
     }
 
+    // Get workspace members
+    const { data: membership } = await supabase
+        .from('workspace_members')
+        .select('workspace_id')
+        .eq('user_id', user.id)
+        .single()
+
+    let workspaceMembers: any[] = []
+    if (membership) {
+        const { data } = await supabase
+            .from('workspace_members')
+            .select(`
+                user_id,
+                profiles (
+                    id,
+                    full_name,
+                    email,
+                    avatar_url
+                )
+            `)
+            .eq('workspace_id', membership.workspace_id)
+
+        workspaceMembers = data || []
+    }
+
     return (
         <div className="h-[calc(100vh-2rem)] flex flex-col">
             <div className="mb-6 flex items-center justify-between">
@@ -68,7 +93,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                 </div>
                 <div className="flex items-center gap-2">
                     <ProjectChatButton projectId={project.id} projectName={project.name} />
-                    <EditProjectDialog project={project} />
+                    <EditProjectDialog project={project} workspaceMembers={workspaceMembers} />
                 </div>
             </div>
 
