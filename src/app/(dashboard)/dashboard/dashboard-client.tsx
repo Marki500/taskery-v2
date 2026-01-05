@@ -45,6 +45,16 @@ export function DashboardClient({ userId, userName, workspaceId, initialStats }:
             {/* Subtle background pattern */}
             <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_30%_20%,rgba(99,102,241,0.03),transparent_50%),radial-gradient(circle_at_70%_80%,rgba(168,85,247,0.03),transparent_50%)]" />
 
+            {/* Loading overlay */}
+            {loading && (
+                <div className="absolute inset-0 bg-background/50 backdrop-blur-sm z-50 flex items-center justify-center rounded-lg">
+                    <div className="flex flex-col items-center gap-3">
+                        <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+                        <p className="text-sm font-medium text-muted-foreground">Cargando estadísticas...</p>
+                    </div>
+                </div>
+            )}
+
             {/* Filter Toggle */}
             <div className="flex justify-end">
                 <ProjectFilterToggle />

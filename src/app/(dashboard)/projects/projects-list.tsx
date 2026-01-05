@@ -79,7 +79,31 @@ export function ProjectsList({ initialProjects, workspaceMembers = [] }: Project
             </div>
 
             {/* Projects Grid */}
-            {filteredProjects.length === 0 ? (
+            {loading ? (
+                // Loading skeleton
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                        <Card key={i} className="h-full border-0 shadow-2xl bg-white dark:bg-slate-900 ring-1 ring-slate-200 dark:ring-slate-800">
+                            <CardHeader className="relative pb-4">
+                                <div className="flex items-start gap-4">
+                                    <div className="w-14 h-14 rounded-xl bg-muted animate-pulse" />
+                                    <div className="flex-1 space-y-2">
+                                        <div className="h-6 bg-muted rounded animate-pulse w-3/4" />
+                                        <div className="h-4 bg-muted rounded animate-pulse w-full" />
+                                    </div>
+                                </div>
+                            </CardHeader>
+                            <CardFooter className="pt-4 border-t flex items-center justify-between">
+                                <div className="flex -space-x-2">
+                                    <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
+                                    <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
+                                </div>
+                                <div className="h-4 bg-muted rounded animate-pulse w-20" />
+                            </CardFooter>
+                        </Card>
+                    ))}
+                </div>
+            ) : filteredProjects.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 border-2 border-dashed rounded-2xl bg-muted/20">
                     <FolderKanban className="h-16 w-16 text-muted-foreground/30 mb-4" />
                     <h3 className="text-2xl font-semibold text-muted-foreground">
