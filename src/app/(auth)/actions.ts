@@ -12,7 +12,7 @@ export async function login(formData: FormData) {
     const email = formData.get('email') as string
     const password = formData.get('password') as string
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error, data } = await supabase.auth.signInWithPassword({
         email,
         password,
     })
@@ -21,8 +21,21 @@ export async function login(formData: FormData) {
         return { error: error.message }
     }
 
+    // Check if user is a client
+    const { data: client } = await supabase
+        .from('clients')
+        .select('id')
+        .eq('user_id', data.user.id)
+        .single()
+
     revalidatePath('/', 'layout')
-    redirect('/projects')
+
+    // Redirect based on user type
+    if (client) {
+        redirect('/portal')
+    } else {
+        redirect('/projects')
+    }
 }
 
 export async function signup(formData: FormData) {
