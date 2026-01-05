@@ -44,10 +44,11 @@ interface ProjectsListProps {
 export function ProjectsList({ initialProjects, workspaceMembers = [] }: ProjectsListProps) {
     const [search, setSearch] = useState('')
     const { filter, setFilter } = useProjectFilter()
-    const [projects, setProjects] = useState(initialProjects)
-    const [loading, setLoading] = useState(false)
+    const [projects, setProjects] = useState<Project[]>([])  // Start with empty array
+    const [loading, setLoading] = useState(true)  // Start with loading true
+    const [isInitialized, setIsInitialized] = useState(false)
 
-    // Fetch projects when filter changes
+    // Fetch projects when filter changes or on mount
     useEffect(() => {
         const loadProjects = async () => {
             setLoading(true)
@@ -58,6 +59,7 @@ export function ProjectsList({ initialProjects, workspaceMembers = [] }: Project
                 console.error('Error loading projects:', error)
             } finally {
                 setLoading(false)
+                setIsInitialized(true)
             }
         }
         loadProjects()

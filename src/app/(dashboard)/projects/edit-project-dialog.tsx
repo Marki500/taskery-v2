@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Pencil, FolderKanban, Rocket, Target, Briefcase, Star, Layout, Check } from "lucide-react"
 import { updateProject, Project, getProjectMembers, assignMemberToProject, removeMemberFromProject } from "./project-actions"
 import { cn } from "@/lib/utils"
@@ -214,24 +215,47 @@ export function EditProjectDialog({ project, workspaceMembers = [] }: EditProjec
                             <Label className="text-lg font-bold">Miembros Asignados</Label>
                             {workspaceMembers.length > 0 ? (
                                 <>
-                                    <div className="flex flex-wrap gap-2">
-                                        {workspaceMembers.map((member) => (
-                                            <Button
-                                                key={member.user_id}
-                                                type="button"
-                                                variant={selectedMembers.includes(member.user_id) ? "default" : "outline"}
-                                                size="sm"
-                                                onClick={() => {
-                                                    setSelectedMembers(prev =>
-                                                        prev.includes(member.user_id)
-                                                            ? prev.filter(id => id !== member.user_id)
-                                                            : [...prev, member.user_id]
-                                                    )
-                                                }}
-                                            >
-                                                {member.profiles?.full_name || member.profiles?.email || 'Usuario'}
-                                            </Button>
-                                        ))}
+                                    <div className="grid gap-2">
+                                        {workspaceMembers.map((member) => {
+                                            const isSelected = selectedMembers.includes(member.user_id)
+                                            return (
+                                                <button
+                                                    key={member.user_id}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setSelectedMembers(prev =>
+                                                            prev.includes(member.user_id)
+                                                                ? prev.filter(id => id !== member.user_id)
+                                                                : [...prev, member.user_id]
+                                                        )
+                                                    }}
+                                                    className={cn(
+                                                        "flex items-center gap-3 p-3 rounded-lg border-2 transition-all text-left",
+                                                        isSelected
+                                                            ? "border-primary bg-primary/10"
+                                                            : "border-border hover:border-primary/50 hover:bg-accent"
+                                                    )}
+                                                >
+                                                    <Avatar className="h-10 w-10">
+                                                        <AvatarImage src={member.profiles?.avatar_url} />
+                                                        <AvatarFallback>
+                                                            {(member.profiles?.full_name || member.profiles?.email || 'U')[0].toUpperCase()}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="font-medium truncate">
+                                                            {member.profiles?.full_name || 'Usuario'}
+                                                        </p>
+                                                        <p className="text-sm text-muted-foreground truncate">
+                                                            {member.profiles?.email}
+                                                        </p>
+                                                    </div>
+                                                    {isSelected && (
+                                                        <Check className="h-5 w-5 text-primary flex-shrink-0" />
+                                                    )}
+                                                </button>
+                                            )
+                                        })}
                                     </div>
                                     {selectedMembers.length > 0 && (
                                         <p className="text-xs text-muted-foreground">
