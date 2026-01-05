@@ -37,11 +37,10 @@ const colorMap: Record<string, string> = {
 }
 
 interface ProjectsListProps {
-    initialProjects: Project[]
     workspaceMembers?: any[]
 }
 
-export function ProjectsList({ initialProjects, workspaceMembers = [] }: ProjectsListProps) {
+export function ProjectsList({ workspaceMembers = [] }: ProjectsListProps) {
     const [search, setSearch] = useState('')
     const { filter, setFilter } = useProjectFilter()
     const [projects, setProjects] = useState<Project[]>([])  // Start with empty array
