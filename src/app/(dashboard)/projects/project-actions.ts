@@ -247,8 +247,8 @@ export async function getProjectsWithMembers(filter: 'all' | 'assigned' = 'all',
 
     if (!targetWorkspaceId) return []
 
-    // Fetch all projects with their members
-    const { data, error } = await supabase
+    // Build query based on filter
+    let query = supabase
         .from('projects')
         .select(`
             *,
@@ -264,14 +264,21 @@ export async function getProjectsWithMembers(filter: 'all' | 'assigned' = 'all',
             )
         `)
         .eq('workspace_id', targetWorkspaceId)
-        .order('created_at', { ascending: false })
+
+    // If filter is 'assigned', join with project_members to only get assigned projects
+    if (filter === 'assigned') {
+        // Use inner join by filtering project_members
+        query = query.not('project_members', 'is', null)
+    }
+
+    const { data, error } = await query.order('created_at', { ascending: false })
 
     if (error) {
         console.error('Error fetching projects:', error)
         return []
     }
 
-    // If filter is 'assigned', only return projects where user is a member
+    // Additional client-side filter for 'assigned' to ensure user is actually a member
     if (filter === 'assigned') {
         return (data || []).filter(project =>
             project.project_members?.some((member: any) => member.user_id === user.id)
