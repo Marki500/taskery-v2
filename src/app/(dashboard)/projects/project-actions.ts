@@ -165,3 +165,118 @@ export async function updateProject(id: string, name: string, description?: stri
     revalidatePath(`/projects/${id}`)
     return { success: true }
 }
+
+// Project Members Management
+
+export async function assignMemberToProject(projectId: string, userId: string, role: 'owner' | 'member' = 'member') {
+    const supabase = await createClient()
+
+    const { error } = await supabase
+        .from('project_members')
+        .insert({ project_id: projectId, user_id: userId, role })
+
+    if (error) {
+        console.error('Error assigning member:', error)
+        return { error: error.message }
+    }
+
+    revalidatePath('/projects')
+    revalidatePath(`/projects/${projectId}`)
+    return { success: true }
+}
+
+export async function removeMemberFromProject(projectId: string, userId: string) {
+    const supabase = await createClient()
+
+    const { error } = await supabase
+        .from('project_members')
+        .delete()
+        .eq('project_id', projectId)
+        .eq('user_id', userId)
+
+    if (error) {
+        console.error('Error removing member:', error)
+        return { error: error.message }
+    }
+
+    revalidatePath('/projects')
+    revalidatePath(`/projects/${projectId}`)
+    return { success: true }
+}
+
+export async function getProjectMembers(projectId: string) {
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+        .from('project_members')
+        .select(`
+            user_id,
+            role,
+            assigned_at,
+            profiles (
+                id,
+                full_name,
+                email,
+                avatar_url
+            )
+        `)
+        .eq('project_id', projectId)
+
+    if (error) {
+        console.error('Error fetching project members:', error)
+        return []
+    }
+
+    return data || []
+}
+
+export async function getProjectsWithMembers(filter: 'all' | 'assigned' = 'all', workspaceId?: string) {
+    const supabase = await createClient()
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return []
+
+    let targetWorkspaceId = workspaceId
+
+    if (!targetWorkspaceId) {
+        const activeWorkspace = await getActiveWorkspace()
+        if (activeWorkspace) {
+            targetWorkspaceId = activeWorkspace.id
+        }
+    }
+
+    if (!targetWorkspaceId) return []
+
+    // Fetch all projects with their members
+    const { data, error } = await supabase
+        .from('projects')
+        .select(`
+            *,
+            project_members (
+                user_id,
+                role,
+                profiles (
+                    id,
+                    full_name,
+                    email,
+                    avatar_url
+                )
+            )
+        `)
+        .eq('workspace_id', targetWorkspaceId)
+        .order('created_at', { ascending: false })
+
+    if (error) {
+        console.error('Error fetching projects:', error)
+        return []
+    }
+
+    // If filter is 'assigned', only return projects where user is a member
+    if (filter === 'assigned') {
+        return (data || []).filter(project =>
+            project.project_members?.some((member: any) => member.user_id === user.id)
+        )
+    }
+
+    return data || []
+}
