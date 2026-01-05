@@ -141,7 +141,11 @@ export async function inviteClientUser(clientId: string) {
     }
 
     // 3. Invite user
-    const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(client.email)
+    const redirectUrl = `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`
+    const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
+        client.email,
+        { redirectTo: redirectUrl }
+    )
 
     if (inviteError) {
         console.error('Error inviting user:', inviteError)
