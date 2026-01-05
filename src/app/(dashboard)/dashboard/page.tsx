@@ -19,7 +19,16 @@ export default async function DashboardPage() {
         return <div className="p-8">Cargando estadísticas...</div>
     }
 
-    const userName = user.email?.split('@')[0] || 'Usuario'
+    // Get workspace ID for activity feed
+    const { data: membership } = await supabase
+        .from('workspace_members')
+        .select('workspace_id')
+        .eq('user_id', user.id)
+        .limit(1)
+        .single()
 
-    return <DashboardClient userId={user.id} userName={userName} initialStats={stats} />
+    const userName = user.email?.split('@')[0] || 'Usuario'
+    const workspaceId = membership?.workspace_id || null
+
+    return <DashboardClient userId={user.id} userName={userName} workspaceId={workspaceId} initialStats={stats} />
 }

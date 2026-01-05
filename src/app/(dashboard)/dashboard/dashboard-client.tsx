@@ -9,16 +9,17 @@ import { ProductivityChart } from "@/components/dashboard/widgets/productivity-c
 import { FocusList } from "@/components/dashboard/widgets/focus-list"
 import { TaskDistributionChart } from "@/components/dashboard/widgets/task-distribution-chart"
 import { TimeTrackingWidget } from "@/components/dashboard/widgets/time-tracking-widget"
-import { DashboardActivityWrapper } from "@/components/dashboard/widgets/dashboard-activity-wrapper"
+import { ActivityFeed } from "@/components/dashboard/widgets/activity-feed"
 import { ProjectFilterToggle } from '@/components/project-filter-toggle'
 
 interface DashboardClientProps {
     userId: string
     userName: string
+    workspaceId: string | null
     initialStats: any
 }
 
-export function DashboardClient({ userId, userName, initialStats }: DashboardClientProps) {
+export function DashboardClient({ userId, userName, workspaceId, initialStats }: DashboardClientProps) {
     const { filter } = useProjectFilter()
     const [stats, setStats] = useState(initialStats)
     const [loading, setLoading] = useState(false)
@@ -85,7 +86,7 @@ export function DashboardClient({ userId, userName, initialStats }: DashboardCli
 
                 {/* 5. Activity Feed */}
                 <div className="h-[500px]">
-                    <DashboardActivityWrapper userId={userId} />
+                    {workspaceId && <ActivityFeed workspaceId={workspaceId} />}
                 </div>
             </div>
         </div>
