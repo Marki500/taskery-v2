@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient as createSupabaseClient } from "@/utils/supabase/server"
+import { createAdminClient } from "@/utils/supabase/admin"
 import { revalidatePath } from "next/cache"
 
 
@@ -111,7 +112,6 @@ export async function deleteClient(clientId: string) {
     return { success: true }
 }
 
-import { createAdminClient } from "@/utils/supabase/admin"
 
 export async function inviteClientUser(clientId: string) {
     const supabase = await createSupabaseClient()
@@ -154,7 +154,7 @@ export async function inviteClientUser(clientId: string) {
 
     // 4. Link user_id to client immediately
     if (inviteData.user) {
-        const { error: updateError } = await supabase
+        const { error: updateError } = await supabaseAdmin
             .from('clients')
             .update({ user_id: inviteData.user.id })
             .eq('id', clientId)
