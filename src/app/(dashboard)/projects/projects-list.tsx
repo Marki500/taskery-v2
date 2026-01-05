@@ -9,9 +9,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { FolderKanban, Clock, ArrowRight, Rocket, Target, Briefcase, Star, Layout, Users } from "lucide-react"
 import { NewProjectDialog } from "./new-project-dialog"
 import { ProjectMembersDialog } from "./project-members-dialog"
+import { ProjectFilterToggle } from "@/components/project-filter-toggle"
 import { cn } from "@/lib/utils"
 import { ProjectSearch } from "./project-search"
 import { Project, getProjectsWithMembers } from "./project-actions"
+import { useProjectFilter } from "@/contexts/ProjectFilterContext"
 
 const iconMap: Record<string, any> = {
     FolderKanban,
@@ -42,17 +44,9 @@ interface ProjectsListProps {
 
 export function ProjectsList({ initialProjects, workspaceMembers = [] }: ProjectsListProps) {
     const [search, setSearch] = useState('')
-    const [filter, setFilter] = useState<'all' | 'assigned'>('all')
+    const { filter, setFilter } = useProjectFilter()
     const [projects, setProjects] = useState(initialProjects)
     const [loading, setLoading] = useState(false)
-
-    // Load filter preference from localStorage
-    useEffect(() => {
-        const savedFilter = localStorage.getItem('projectsFilter') as 'all' | 'assigned' | null
-        if (savedFilter) {
-            setFilter(savedFilter)
-        }
-    }, [])
 
     // Fetch projects when filter changes
     useEffect(() => {
@@ -61,7 +55,6 @@ export function ProjectsList({ initialProjects, workspaceMembers = [] }: Project
             try {
                 const data = await getProjectsWithMembers(filter)
                 setProjects(data)
-                localStorage.setItem('projectsFilter', filter)
             } catch (error) {
                 console.error('Error loading projects:', error)
             } finally {
@@ -81,24 +74,7 @@ export function ProjectsList({ initialProjects, workspaceMembers = [] }: Project
             {/* Search and Filter Bar */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <ProjectSearch value={search} onChange={setSearch} />
-
-                {/* Filter Toggle */}
-                <div className="flex gap-2">
-                    <Button
-                        variant={filter === 'all' ? 'default' : 'outline'}
-                        onClick={() => setFilter('all')}
-                        disabled={loading}
-                    >
-                        Todos los Proyectos
-                    </Button>
-                    <Button
-                        variant={filter === 'assigned' ? 'default' : 'outline'}
-                        onClick={() => setFilter('assigned')}
-                        disabled={loading}
-                    >
-                        Mis Proyectos
-                    </Button>
-                </div>
+                <ProjectFilterToggle />
             </div>
 
             {/* Projects Grid */}
