@@ -62,6 +62,12 @@ export function EditProjectDialog({ project, workspaceMembers = [] }: EditProjec
     const [isLoading, setIsLoading] = useState(false)
     const router = useRouter()
 
+    // DEBUG: Log workspaceMembers when component mounts or when it changes
+    useEffect(() => {
+        console.log('🔍 EditProjectDialog - workspaceMembers:', workspaceMembers)
+        console.log('🔍 EditProjectDialog - workspaceMembers length:', workspaceMembers.length)
+    }, [workspaceMembers])
+
     // Load current project members when dialog opens
     useEffect(() => {
         if (open) {
