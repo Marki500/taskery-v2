@@ -15,6 +15,31 @@ export default async function ProjectsPage() {
 
     const projects = await getProjects()
 
+    // Get workspace members for project assignment
+    const { data: membership } = await supabase
+        .from('workspace_members')
+        .select('workspace_id')
+        .eq('user_id', user.id)
+        .single()
+
+    let workspaceMembers: any[] = []
+    if (membership) {
+        const { data } = await supabase
+            .from('workspace_members')
+            .select(`
+                user_id,
+                profiles (
+                    id,
+                    full_name,
+                    email,
+                    avatar_url
+                )
+            `)
+            .eq('workspace_id', membership.workspace_id)
+
+        workspaceMembers = data || []
+    }
+
     return (
         <div className="space-y-8 max-w-7xl mx-auto animate-in fade-in duration-500">
             {/* Header */}
@@ -35,7 +60,7 @@ export default async function ProjectsPage() {
                 </div>
             </div>
 
-            <ProjectsList initialProjects={projects} />
+            <ProjectsList initialProjects={projects} workspaceMembers={workspaceMembers} />
         </div>
     )
 }
