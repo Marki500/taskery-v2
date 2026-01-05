@@ -234,9 +234,14 @@ export function EditProjectDialog({ project, workspaceMembers = [] }: EditProjec
                                     )}
                                 </>
                             ) : (
-                                <p className="text-sm text-muted-foreground">
-                                    No hay otros miembros en el workspace. Invita colaboradores para asignarlos a proyectos.
-                                </p>
+                                <div className="space-y-2">
+                                    <p className="text-sm text-muted-foreground">
+                                        No hay miembros disponibles en este workspace.
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                        Los miembros deben tener rol 'admin' o 'member' (no 'client') para poder ser asignados a proyectos.
+                                    </p>
+                                </div>
                             )}
                         </div>
                     </div>
