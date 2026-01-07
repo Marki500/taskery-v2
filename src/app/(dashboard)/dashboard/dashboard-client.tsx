@@ -63,7 +63,7 @@ export function DashboardClient({ userId, userName, workspaceId, initialStats }:
             {/* 1. Greeting Section */}
             <GreetingWidget
                 userName={userName}
-                pendingCount={stats.pendingTasks}
+                pendingCount={stats.focusCount || 0}
                 productivityScore={stats.productivityScore}
             />
 

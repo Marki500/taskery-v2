@@ -40,6 +40,7 @@ export function EditTaskDialog({ task, onSave, onDelete }: EditTaskDialogProps) 
         task.deadline ? new Date(task.deadline) : undefined
     )
     const [isLoading, setIsLoading] = useState(false)
+    const [calendarOpen, setCalendarOpen] = useState(false) // Control calendar popover
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -73,6 +74,11 @@ export function EditTaskDialog({ task, onSave, onDelete }: EditTaskDialogProps) 
         } finally {
             setIsLoading(false)
         }
+    }
+
+    const handleDateSelect = (date: Date | undefined) => {
+        setDeadline(date)
+        setCalendarOpen(false) // Close calendar on selection
     }
 
     return (
@@ -118,7 +124,7 @@ export function EditTaskDialog({ task, onSave, onDelete }: EditTaskDialogProps) 
                         </div>
                         <div className="grid gap-2">
                             <Label className="text-base">Fecha límite</Label>
-                            <Popover>
+                            <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
                                 <PopoverTrigger asChild>
                                     <Button
                                         variant="outline"
@@ -135,7 +141,7 @@ export function EditTaskDialog({ task, onSave, onDelete }: EditTaskDialogProps) 
                                     <Calendar
                                         mode="single"
                                         selected={deadline}
-                                        onSelect={setDeadline}
+                                        onSelect={handleDateSelect}
                                         initialFocus
                                         locale={es}
                                     />

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
-import { startTimeEntry, stopTimeEntry } from '@/app/(dashboard)/projects/time-actions'
+import { startTimeEntry, stopTimeEntry, getActiveTimeEntryWithTask } from '@/app/(dashboard)/projects/time-actions'
 import { toast } from 'sonner'
 
 // Types for the timer context
@@ -18,6 +18,7 @@ interface TimerContextType {
     elapsedSeconds: number
     totalElapsed: number  // totalTime + elapsedSeconds
     isRunning: boolean
+    isRestoring: boolean  // True while restoring timer from database
     startTimer: (task: ActiveTimerTask) => Promise<void>
     stopTimer: () => Promise<{ taskId: string; newTotalTime: number } | null>
     pauseTimer: () => void
@@ -30,11 +31,55 @@ const TimerContext = createContext<TimerContextType | undefined>(undefined)
 export function TimerProvider({ children }: { children: React.ReactNode }) {
     const [activeTask, setActiveTask] = useState<ActiveTimerTask | null>(null)
     const [activeTimeEntryId, setActiveTimeEntryId] = useState<string | null>(null)
+    const [startTime, setStartTime] = useState<number | null>(null)  // Timestamp when timer started
+    const [pausedElapsed, setPausedElapsed] = useState(0)  // Seconds elapsed when paused
     const [elapsedSeconds, setElapsedSeconds] = useState(0)
     const [baseTotalTime, setBaseTotalTime] = useState(0)  // Previously accumulated time
     const [isRunning, setIsRunning] = useState(false)
+    const [isRestoring, setIsRestoring] = useState(true)  // Start as restoring
     const [lastStoppedTask, setLastStoppedTask] = useState<{ taskId: string; newTotalTime: number } | null>(null)
     const intervalRef = useRef<NodeJS.Timeout | null>(null)
+    const hasRestored = useRef(false)
+
+    // Restore timer from database on mount
+    useEffect(() => {
+        if (hasRestored.current) return
+        hasRestored.current = true
+
+        const restoreTimer = async () => {
+            try {
+                const activeEntry = await getActiveTimeEntryWithTask()
+                if (activeEntry) {
+                    // Calculate elapsed time from started_at
+                    const startedAt = new Date(activeEntry.timeEntry.started_at).getTime()
+                    const now = Date.now()
+                    const elapsedMs = now - startedAt
+
+                    // Restore timer state
+                    setActiveTask({
+                        id: activeEntry.task.id,
+                        title: activeEntry.task.title,
+                        projectId: activeEntry.task.project_id,
+                        totalTime: activeEntry.task.totalTime
+                    })
+                    setActiveTimeEntryId(activeEntry.timeEntry.id)
+                    setBaseTotalTime(activeEntry.task.totalTime)
+                    setStartTime(startedAt)
+                    setPausedElapsed(0)
+                    setElapsedSeconds(Math.floor(elapsedMs / 1000))
+                    setIsRunning(true)
+
+                    toast.info('Temporizador restaurado')
+                }
+            } catch (error) {
+                console.error('Error restoring timer:', error)
+            } finally {
+                setIsRestoring(false)
+            }
+        }
+
+        restoreTimer()
+    }, [])
 
     // Cleanup interval on unmount
     useEffect(() => {
@@ -45,12 +90,20 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
         }
     }, [])
 
-    // Interval logic
+    // Interval logic - now calculates from real timestamp
     useEffect(() => {
-        if (isRunning) {
-            intervalRef.current = setInterval(() => {
-                setElapsedSeconds(prev => prev + 1)
-            }, 1000)
+        if (isRunning && startTime !== null) {
+            // Update immediately
+            const calculateElapsed = () => {
+                const now = Date.now()
+                const elapsed = Math.floor((now - startTime) / 1000) + pausedElapsed
+                setElapsedSeconds(elapsed)
+            }
+
+            calculateElapsed()
+
+            // Update display every second
+            intervalRef.current = setInterval(calculateElapsed, 1000)
         } else {
             if (intervalRef.current) {
                 clearInterval(intervalRef.current)
@@ -63,7 +116,7 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
                 clearInterval(intervalRef.current)
             }
         }
-    }, [isRunning])
+    }, [isRunning, startTime, pausedElapsed])
 
     const startTimer = useCallback(async (task: ActiveTimerTask) => {
         try {
@@ -74,6 +127,8 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
             }
             setActiveTask(task)
             setBaseTotalTime(task.totalTime || 0)  // Store previously accumulated time
+            setStartTime(Date.now())  // Store actual start timestamp
+            setPausedElapsed(0)
             setElapsedSeconds(0)
             setIsRunning(true)
         } catch (error) {
@@ -96,6 +151,8 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
                 // Reset state
                 setActiveTask(null)
                 setActiveTimeEntryId(null)
+                setStartTime(null)
+                setPausedElapsed(0)
                 setBaseTotalTime(0)
                 setElapsedSeconds(0)
                 setIsRunning(false)
@@ -112,6 +169,8 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
 
         setActiveTask(null)
         setActiveTimeEntryId(null)
+        setStartTime(null)
+        setPausedElapsed(0)
         setBaseTotalTime(0)
         setElapsedSeconds(0)
         setIsRunning(false)
@@ -119,14 +178,22 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     }, [activeTimeEntryId, elapsedSeconds, activeTask])
 
     const pauseTimer = useCallback(() => {
-        setIsRunning(false)
-    }, [])
+        if (isRunning && startTime !== null) {
+            // Store the elapsed time so far
+            const now = Date.now()
+            const elapsed = Math.floor((now - startTime) / 1000) + pausedElapsed
+            setPausedElapsed(elapsed)
+            setStartTime(null)
+            setIsRunning(false)
+        }
+    }, [isRunning, startTime, pausedElapsed])
 
     const resumeTimer = useCallback(() => {
-        if (activeTask) {
+        if (activeTask && !isRunning) {
+            setStartTime(Date.now())  // New start time for this session
             setIsRunning(true)
         }
-    }, [activeTask])
+    }, [activeTask, isRunning])
 
     return (
         <TimerContext.Provider
@@ -136,6 +203,7 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
                 elapsedSeconds,
                 totalElapsed: baseTotalTime + elapsedSeconds,
                 isRunning,
+                isRestoring,
                 startTimer,
                 stopTimer,
                 pauseTimer,
@@ -169,3 +237,4 @@ export function formatTime(totalSeconds: number): string {
     }
     return `${pad(minutes)}:${pad(seconds)}`
 }
+

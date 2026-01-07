@@ -31,8 +31,9 @@ export function NewTaskDialog({ projectId, onTaskCreated }: NewTaskDialogProps) 
     const [open, setOpen] = useState(false)
     const [title, setTitle] = useState("")
     const [tag, setTag] = useState("")
-    const [deadline, setDeadline] = useState<Date | undefined>(undefined)
+    const [deadline, setDeadline] = useState<Date | undefined>(new Date()) // Default to today
     const [isLoading, setIsLoading] = useState(false)
+    const [calendarOpen, setCalendarOpen] = useState(false) // Control calendar popover
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -48,7 +49,7 @@ export function NewTaskDialog({ projectId, onTaskCreated }: NewTaskDialogProps) 
             toast.success("¡Tarea creada!")
             setTitle("")
             setTag("")
-            setDeadline(undefined)
+            setDeadline(new Date()) // Reset to today
             setOpen(false)
             onTaskCreated?.()
         } catch (error) {
@@ -56,6 +57,11 @@ export function NewTaskDialog({ projectId, onTaskCreated }: NewTaskDialogProps) 
         } finally {
             setIsLoading(false)
         }
+    }
+
+    const handleDateSelect = (date: Date | undefined) => {
+        setDeadline(date)
+        setCalendarOpen(false) // Close calendar on selection
     }
 
     return (
@@ -97,8 +103,8 @@ export function NewTaskDialog({ projectId, onTaskCreated }: NewTaskDialogProps) 
                             />
                         </div>
                         <div className="grid gap-2">
-                            <Label className="text-base">Fecha límite (Opcional)</Label>
-                            <Popover>
+                            <Label className="text-base">Fecha límite</Label>
+                            <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
                                 <PopoverTrigger asChild>
                                     <Button
                                         variant="outline"
@@ -115,7 +121,7 @@ export function NewTaskDialog({ projectId, onTaskCreated }: NewTaskDialogProps) 
                                     <Calendar
                                         mode="single"
                                         selected={deadline}
-                                        onSelect={setDeadline}
+                                        onSelect={handleDateSelect}
                                         initialFocus
                                         locale={es}
                                     />
@@ -144,3 +150,4 @@ export function NewTaskDialog({ projectId, onTaskCreated }: NewTaskDialogProps) 
         </Dialog>
     )
 }
+

@@ -109,9 +109,6 @@ export async function getDashboardStats(filter: 'all' | 'assigned' = 'all') {
         `)
         .in('workspace_id', workspaceIds)
 
-    console.log('🔍 DEBUG getDashboardStats - Workspace IDs:', workspaceIds)
-    console.log('🔍 DEBUG getDashboardStats - Projects:', projectsData)
-    console.log('🔍 DEBUG getDashboardStats - Projects Error:', projectsError)
 
     // Apply filter
     let projects = projectsData || []
@@ -143,10 +140,6 @@ export async function getDashboardStats(filter: 'all' | 'assigned' = 'all') {
         .select('id, status, created_at, deadline, title, project_id')
         .in('project_id', projectIds)
 
-    console.log('🔍 DEBUG getDashboardStats - Project IDs:', projectIds)
-    console.log('🔍 DEBUG getDashboardStats - Tasks:', tasks)
-    console.log('🔍 DEBUG getDashboardStats - Tasks Error:', tasksError)
-    console.log('🔍 DEBUG getDashboardStats - Tasks Length:', tasks?.length)
 
     if (!tasks) return emptyStats
 
@@ -160,10 +153,25 @@ export async function getDashboardStats(filter: 'all' | 'assigned' = 'all') {
     ).length
 
     // Upcoming deadlines (today/tomorrow)
-    const upcomingDeadlines = tasks
-        .filter(t => t.deadline && new Date(t.deadline) >= now && new Date(t.deadline) <= new Date(now.getTime() + 48 * 60 * 60 * 1000) && t.status !== 'done')
+    // Compare by date only (ignoring time) to ensure tasks due today always show
+    const startOfToday = new Date(now)
+    startOfToday.setHours(0, 0, 0, 0)
+
+    const endOfTomorrow = new Date(now)
+    endOfTomorrow.setDate(endOfTomorrow.getDate() + 1)
+    endOfTomorrow.setHours(23, 59, 59, 999)
+
+    const upcomingDeadlinesRaw = tasks
+        .filter(t => {
+            if (!t.deadline || t.status === 'done') return false
+            const deadlineDate = new Date(t.deadline)
+            // Show tasks with deadline today or tomorrow (even if time has passed today)
+            return deadlineDate >= startOfToday && deadlineDate <= endOfTomorrow
+        })
         .sort((a, b) => new Date(a.deadline!).getTime() - new Date(b.deadline!).getTime())
-        .slice(0, 5)
+
+    const upcomingDeadlines = upcomingDeadlinesRaw.slice(0, 5)
+    const focusCount = upcomingDeadlinesRaw.length
 
     // Real weekly activity from workspace_activity
     const sevenDaysAgo = new Date()
@@ -245,6 +253,7 @@ export async function getDashboardStats(filter: 'all' | 'assigned' = 'all') {
         upcomingDeadlines,
         productivityScore: completedTasks + pendingTasks > 0 ? Math.round((completedTasks / (completedTasks + pendingTasks)) * 100) : 0,
         tasksByStatus,
-        totalHoursThisWeek
+        totalHoursThisWeek,
+        focusCount
     }
 }

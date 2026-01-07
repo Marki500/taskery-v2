@@ -37,6 +37,8 @@ import { cn } from '@/lib/utils'
 import { formatTime } from "@/contexts/timer-context"
 import { tagColors, tagColorOptions, getTagColorStyles, TagColorName } from "@/lib/tag-colors"
 import { SubtaskList } from '@/components/kanban/subtask-list'
+import { RichTextEditor } from '@/components/ui/rich-text-editor'
+import { EditTimeDialog } from '@/components/timer/edit-time-dialog'
 
 interface TaskDetailViewProps {
     task: any
@@ -68,6 +70,7 @@ export function TaskDetailView({ task, comments: initialComments, activity, subt
     const [tag, setTag] = useState(task.tag || "")
     const [tagColor, setTagColor] = useState<string>(task.tagColor || 'gray')
     const [assignedTo, setAssignedTo] = useState<string | null>(task.assignedTo || null)
+    const [notes, setNotes] = useState(task.notes || "")
 
     // Lists State
     const [comments, setComments] = useState(initialComments)
@@ -77,16 +80,6 @@ export function TaskDetailView({ task, comments: initialComments, activity, subt
     // UI State
     const [isSaving, setIsSaving] = useState(false)
     const [isSubmittingComment, setIsSubmittingComment] = useState(false)
-
-    // Debounce save for text fields
-    useEffect(() => {
-        const timeout = setTimeout(() => {
-            if (title !== task.title || description !== (task.description || "")) {
-                handleUpdateTask()
-            }
-        }, 1000)
-        return () => clearTimeout(timeout)
-    }, [title, description])
 
     const handleBack = () => {
         router.back()
@@ -103,7 +96,7 @@ export function TaskDetailView({ task, comments: initialComments, activity, subt
                 deadline: deadline ? deadline.toISOString() : null,
                 assignedTo: assignedTo,
                 status: status,
-                priority: priority,
+                // Note: priority is not in the database schema
                 ...overrideData
             }
 
@@ -155,8 +148,14 @@ export function TaskDetailView({ task, comments: initialComments, activity, subt
                     <span>/</span>
                     <span className="font-semibold text-foreground">Detalle de Tarea</span>
                 </div>
-                <div className="ml-auto">
-                    <span className="text-xs text-muted-foreground mr-2">{isSaving ? 'Guardando...' : 'Guardado'}</span>
+                <div className="ml-auto flex items-center gap-3">
+                    <Button
+                        onClick={() => handleUpdateTask({ notes })}
+                        disabled={isSaving}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                    >
+                        {isSaving ? 'Guardando...' : 'Guardar cambios'}
+                    </Button>
                 </div>
             </div>
 
@@ -205,8 +204,6 @@ export function TaskDetailView({ task, comments: initialComments, activity, subt
                                 <Input
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value)}
-                                    // Blur triggers save via useEffect debounce, but explicit blur ensures recent value
-                                    onBlur={() => handleUpdateTask()}
                                     className="text-3xl font-black tracking-tight leading-tight border-none p-0 h-auto focus-visible:ring-0 bg-transparent placeholder:text-muted-foreground/30"
                                     placeholder="Nombre de la tarea"
                                 />
@@ -222,9 +219,22 @@ export function TaskDetailView({ task, comments: initialComments, activity, subt
                                 <Textarea
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
-                                    onBlur={() => handleUpdateTask()}
                                     className="min-h-[150px] resize-none border-0 bg-muted/30 focus-visible:ring-1 focus-visible:ring-indigo-500 rounded-xl leading-relaxed"
                                     placeholder="Añade una descripción detallada..."
+                                />
+                            </div>
+
+                            <Separator />
+
+                            {/* Notes */}
+                            <div className="space-y-4">
+                                <h3 className="font-bold text-lg flex items-center gap-2">
+                                    Notas
+                                </h3>
+                                <RichTextEditor
+                                    content={notes}
+                                    onChange={setNotes}
+                                    placeholder="Añade notas adicionales con formato..."
                                 />
                             </div>
 
@@ -405,14 +415,21 @@ export function TaskDetailView({ task, comments: initialComments, activity, subt
                                 </div>
 
                                 {/* Time Spent */}
-                                <div className="p-4 flex items-center justify-between bg-indigo-50/50 dark:bg-indigo-950/20">
-                                    <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
+                                <div className="p-4 bg-indigo-50/50 dark:bg-indigo-950/20 flex flex-col items-center">
+                                    <div className="flex items-center gap-2 mb-2 text-indigo-600 dark:text-indigo-400">
                                         <Clock className="w-4 h-4" />
                                         <span className="text-sm font-medium">Tiempo Total</span>
                                     </div>
-                                    <span className="text-lg font-black font-mono text-indigo-700 dark:text-indigo-300">
-                                        {formatTime(task.totalTime || 0)}
-                                    </span>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-2xl font-black font-mono text-indigo-700 dark:text-indigo-300">
+                                            {formatTime(task.totalTime || 0)}
+                                        </span>
+                                        <EditTimeDialog
+                                            taskId={task.id}
+                                            currentTotalSeconds={task.totalTime || 0}
+                                            onTimeUpdated={() => router.refresh()}
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </CardContent>

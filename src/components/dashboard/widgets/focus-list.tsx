@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { motion } from "framer-motion"
 import { Calendar, AlertCircle } from "lucide-react"
+import Link from "next/link"
 
 interface FocusListProps {
     tasks: any[]
@@ -28,33 +29,38 @@ export function FocusList({ tasks }: FocusListProps) {
                 ) : (
                     <div className="space-y-3">
                         {tasks.map((task, i) => (
-                            <motion.div
+                            <Link
+                                href={`/projects/${task.project_id || task.projectId}`}
                                 key={task.id}
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: 0.2 + (i * 0.1) }}
-                                className="p-4 rounded-xl bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 hover:border-indigo-200 dark:hover:border-indigo-900 transition-colors group cursor-pointer"
+                                className="block"
                             >
-                                <div className="flex justify-between items-start gap-4">
-                                    <div>
-                                        <h4 className="font-semibold text-foreground leading-snug group-hover:text-indigo-600 transition-colors">
-                                            {task.title}
-                                        </h4>
-                                        <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
-                                            <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 font-medium">
-                                                {task.priority || 'Normal'}
-                                            </span>
-                                            {task.deadline && (
-                                                <span className="flex items-center gap-1 text-orange-600 bg-orange-50 dark:bg-orange-900/20 px-2 py-0.5 rounded-full">
-                                                    <Calendar className="h-3 w-3" />
-                                                    {new Date(task.deadline).toLocaleDateString()}
+                                <motion.div
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: 0.2 + (i * 0.1) }}
+                                    className="p-4 rounded-xl bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 hover:border-indigo-200 dark:hover:border-indigo-900 transition-colors group cursor-pointer"
+                                >
+                                    <div className="flex justify-between items-start gap-4">
+                                        <div>
+                                            <h4 className="font-semibold text-foreground leading-snug group-hover:text-indigo-600 transition-colors">
+                                                {task.title}
+                                            </h4>
+                                            <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                                                <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 font-medium">
+                                                    {task.priority || 'Normal'}
                                                 </span>
-                                            )}
+                                                {task.deadline && (
+                                                    <span className="flex items-center gap-1 text-orange-600 bg-orange-50 dark:bg-orange-900/20 px-2 py-0.5 rounded-full">
+                                                        <Calendar className="h-3 w-3" />
+                                                        {new Date(task.deadline).toLocaleDateString()}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
+                                        <div className="h-2 w-2 rounded-full bg-indigo-500 mt-2" />
                                     </div>
-                                    <div className="h-2 w-2 rounded-full bg-indigo-500 mt-2" />
-                                </div>
-                            </motion.div>
+                                </motion.div>
+                            </Link>
                         ))}
                     </div>
                 )}

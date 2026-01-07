@@ -5,9 +5,22 @@ import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { GripVertical, Play, Clock, CalendarIcon, Pencil, Eye } from "lucide-react"
+import { GripVertical, Play, Clock, CalendarIcon, Pencil, Eye, Trash2 } from "lucide-react"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import Link from "next/link"
 import { useTimer, formatTime } from "@/contexts/timer-context"
+import { toast } from "sonner"
+import { deleteTask } from "@/app/(dashboard)/projects/actions"
 import { Button } from "@/components/ui/button"
 import { TaskSidebar } from "./task-sidebar"
 import { cn } from "@/lib/utils"
@@ -78,7 +91,7 @@ function getDeadlineInfo(deadline: string | null | undefined) {
 }
 
 function TaskCardComponent({ task, onTaskUpdated }: TaskCardProps) {
-    const { startTimer, activeTask, elapsedSeconds } = useTimer()
+    const { startTimer, stopTimer, activeTask, elapsedSeconds } = useTimer()
     const isTimerActive = activeTask?.id === task.id
     const deadlineInfo = getDeadlineInfo(task.deadline)
 
@@ -112,6 +125,24 @@ function TaskCardComponent({ task, onTaskUpdated }: TaskCardProps) {
         })
     }
 
+    const handleStopTimer = (e: React.MouseEvent) => {
+        e.stopPropagation()
+        stopTimer()
+    }
+
+    const handleDelete = async (e: React.MouseEvent) => {
+        e.stopPropagation()
+
+        toast.promise(deleteTask(task.id), {
+            loading: 'Eliminando tarea...',
+            success: () => {
+                onTaskUpdated?.()
+                return 'Tarea eliminada correctamente'
+            },
+            error: 'Error al eliminar la tarea'
+        })
+    }
+
     const leftBorderColor = columnColors[task.columnId] || 'border-l-muted'
 
     if (isDragging) {
@@ -131,69 +162,113 @@ function TaskCardComponent({ task, onTaskUpdated }: TaskCardProps) {
             {...attributes}
             {...listeners}
             className={cn(
-                "cursor-grab active:cursor-grabbing hover:shadow-xl transition-all duration-300 group touch-none rounded-xl overflow-hidden",
-                "border-l-4 hover:-translate-y-1",
+                "relative cursor-grab active:cursor-grabbing hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.3)] transition-all duration-300 group touch-none rounded-xl overflow-hidden border-y border-r border-transparent",
+                "border-l-4",
                 leftBorderColor,
                 isTimerActive
                     ? 'ring-2 ring-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/30'
-                    : 'hover:ring-1 hover:ring-primary/20'
+                    : 'hover:border-primary/40'
             )}
         >
-            <CardContent className="p-5 space-y-4">
-                <div className="flex items-start justify-between gap-3">
+            {/* Action Buttons - Premium Corner Control */}
+            <div className="absolute top-0 right-0 flex items-center gap-0.5 z-20 bg-card/80 backdrop-blur-md py-1.5 px-2 pl-4 rounded-bl-[20px] rounded-tr-xl border-border/40 shadow-sm transition-all duration-300 hover:bg-card hover:border-border/80 hover:shadow-md group/actions">
+                {/* View Details Button */}
+                <Link href={`/projects/${task.projectId}/tasks/${task.id}`}>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground/70 hover:text-primary transition-colors"
+                        onPointerDown={(e) => e.stopPropagation()}
+                    >
+                        <Eye className="h-3.5 w-3.5" />
+                    </Button>
+                </Link>
+                {/* Edit Button */}
+                <TaskSidebar
+                    task={task}
+                    onTaskUpdated={onTaskUpdated}
+                    trigger={
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground/70 hover:text-primary transition-colors"
+                            onPointerDown={(e) => e.stopPropagation()}
+                        >
+                            <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                    }
+                />
+
+                {/* Timer Button */}
+                {isTimerActive ? (
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-600 transition-colors animate-pulse"
+                        onClick={handleStopTimer}
+                        onPointerDown={(e) => e.stopPropagation()}
+                    >
+                        <div className="h-3 w-3 bg-current rounded-sm" />
+                    </Button>
+                ) : (
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground/70 hover:bg-primary/10 hover:text-primary transition-colors"
+                        onClick={handleStartTimer}
+                        onPointerDown={(e) => e.stopPropagation()}
+                    >
+                        <Play className="h-3.5 w-3.5" />
+                    </Button>
+                )}
+
+                {/* Delete Button with Confirmation */}
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground/70 hover:bg-red-50 dark:hover:bg-red-900/10 hover:text-red-600 transition-colors"
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>¿Eliminar tarea?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Estás a punto de eliminar "{task.title}". Esta acción no se puede deshacer.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                                onClick={handleDelete}
+                                className="bg-red-600 hover:bg-red-700 text-white border-0"
+                            >
+                                Eliminar
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+
+                {/* Drag Handle */}
+                <div className="flex items-center justify-center h-7 w-6 text-muted-foreground/30 hover:text-foreground cursor-grab">
+                    <GripVertical className="h-3.5 w-3.5" />
+                </div>
+            </div>
+
+            <CardContent className="p-5 space-y-4 pt-7">
+                <div className="flex items-start">
                     <Link
                         href={`/projects/${task.projectId}/tasks/${task.id}`}
-                        className="text-xl font-bold leading-tight line-clamp-3 text-card-foreground flex-1 tracking-tight hover:text-primary transition-colors cursor-pointer block"
+                        className="text-xl font-bold leading-tight line-clamp-3 text-card-foreground tracking-tight hover:text-primary transition-colors cursor-pointer block w-full"
                         onPointerDown={(e) => e.stopPropagation()}
                     >
                         {task.title}
                     </Link>
-                    <div className="flex items-center gap-1">
-                        {/* View Details Button */}
-                        <Link href={`/projects/${task.projectId}/tasks/${task.id}`}>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-primary"
-                                onPointerDown={(e) => e.stopPropagation()}
-                            >
-                                <Eye className="h-4 w-4" />
-                            </Button>
-                        </Link>
-                        {/* Edit Button - Opens Sidebar */}
-                        <TaskSidebar
-                            task={task}
-                            onTaskUpdated={onTaskUpdated}
-                            trigger={
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                                    onPointerDown={(e) => e.stopPropagation()}
-                                >
-                                    <Pencil className="h-4 w-4" />
-                                </Button>
-                            }
-                        />
-
-                        {/* Timer Button */}
-                        {!isTimerActive && (
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity bg-indigo-100 hover:bg-indigo-200 text-indigo-600"
-                                onClick={handleStartTimer}
-                                onPointerDown={(e) => e.stopPropagation()}
-                            >
-                                <Play className="h-4 w-4" />
-                            </Button>
-                        )}
-
-                        {/* Drag Handle */}
-                        <button className="text-muted-foreground/20 group-hover:text-muted-foreground transition-colors cursor-grab p-1 hover:bg-muted rounded">
-                            <GripVertical className="h-5 w-5" />
-                        </button>
-                    </div>
                 </div>
 
                 {/* Deadline Display */}
@@ -258,9 +333,10 @@ function TaskCardComponent({ task, onTaskUpdated }: TaskCardProps) {
                     {task.commentCount !== undefined && task.commentCount > 0 && (
                         <CommentCount count={task.commentCount} />
                     )}
+
                 </div>
             </CardContent>
-        </Card>
+        </Card >
     )
 }
 

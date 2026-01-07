@@ -117,3 +117,109 @@ export async function getActiveTimeEntry(): Promise<TimeEntry | null> {
 
     return data
 }
+
+// Get active time entry with task details for timer restoration
+export interface ActiveTimeEntryWithTask {
+    timeEntry: TimeEntry
+    task: {
+        id: string
+        title: string
+        project_id: string
+        totalTime: number
+    }
+}
+
+export async function getActiveTimeEntryWithTask(): Promise<ActiveTimeEntryWithTask | null> {
+    const supabase = await createClient()
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return null
+
+    // Get active time entry
+    const { data: timeEntry, error: timeEntryError } = await supabase
+        .from('time_entries')
+        .select('*')
+        .eq('user_id', user.id)
+        .is('ended_at', null)
+        .order('started_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+    if (timeEntryError || !timeEntry) {
+        return null
+    }
+
+    // Get task details
+    const { data: task, error: taskError } = await supabase
+        .from('tasks')
+        .select('id, title, project_id')
+        .eq('id', timeEntry.task_id)
+        .single()
+
+    if (taskError || !task) {
+        return null
+    }
+
+    // Get total time for the task (excluding current entry)
+    const totalTime = await getTaskTotalTime(task.id)
+
+    return {
+        timeEntry,
+        task: {
+            id: task.id,
+            title: task.title,
+            project_id: task.project_id,
+            totalTime
+        }
+    }
+}
+
+// Update time entry duration manually
+export async function updateTimeEntryDuration(timeEntryId: string, newDuration: number): Promise<void> {
+    const supabase = await createClient()
+
+    const { error } = await supabase
+        .from('time_entries')
+        .update({ duration: newDuration })
+        .eq('id', timeEntryId)
+
+    if (error) {
+        console.error('Error updating time entry duration:', error)
+        throw new Error('Failed to update time entry')
+    }
+
+    revalidatePath('/projects', 'layout')
+}
+
+// Add manual time entry (for manual time editing)
+export async function addManualTimeEntry(taskId: string, durationSeconds: number): Promise<void> {
+    const supabase = await createClient()
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
+
+    const now = new Date()
+    // If adding time (positive), start time is in past.
+    // If removing time (negative), start time is same as end time to avoid future dates.
+    const startedAt = durationSeconds > 0
+        ? new Date(now.getTime() - durationSeconds * 1000)
+        : now
+
+    const { error } = await supabase
+        .from('time_entries')
+        .insert({
+            task_id: taskId,
+            user_id: user.id,
+            started_at: startedAt.toISOString(),
+            ended_at: now.toISOString(),
+            duration: durationSeconds
+        })
+
+    if (error) {
+        console.error('Error adding manual time entry:', error)
+        throw new Error('Failed to add manual time entry')
+    }
+
+    revalidatePath('/projects', 'layout')
+}
+

@@ -155,6 +155,8 @@ export async function createTask(
 ) {
     const supabase = await createClient()
 
+    const { data: { user } } = await supabase.auth.getUser()
+
     const { data, error } = await supabase
         .from('tasks')
         .insert({
@@ -164,7 +166,7 @@ export async function createTask(
             status: 'todo',
             tag: tag || null,
             deadline: deadline || null,
-            assigned_to: assignedTo || null
+            assigned_to: assignedTo || (user ? user.id : null)
         })
         .select()
         .single()
@@ -208,6 +210,7 @@ export interface TaskUpdateData {
     assignedTo?: string | null
     status?: string
     priority?: string
+    notes?: string | null
 }
 
 export async function updateTask(taskId: string, data: TaskUpdateData) {
@@ -220,8 +223,10 @@ export async function updateTask(taskId: string, data: TaskUpdateData) {
         tag_color: data.tagColor || null,
         deadline: data.deadline || null,
         assigned_to: data.assignedTo || null,
-        priority: data.priority
+        notes: data.notes !== undefined ? data.notes : undefined,
     }
+
+    // Note: priority field is not in the database schema, so we don't include it
 
     if (data.status) {
         updateData.status = data.status

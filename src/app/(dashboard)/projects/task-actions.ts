@@ -45,7 +45,8 @@ export async function getTaskDetails(taskId: string) {
         tag: task.tag,
         tagColor: task.tag_color,
         assignedTo: task.assigned_to,
-        createdAt: task.created_at
+        createdAt: task.created_at,
+        notes: task.notes
     }
 }
 

@@ -30,10 +30,6 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
         notFound()
     }
 
-    // Get workspace members for this project's workspace
-    console.log('🔍 DEBUG - User ID:', user.id)
-    console.log('🔍 DEBUG - User email:', user.email)
-    console.log('🔍 DEBUG - Project workspace_id:', project.workspace_id)
 
     let workspaceMembers: any[] = []
     if (project.workspace_id) {
@@ -52,16 +48,12 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
             .eq('workspace_id', project.workspace_id)
             .in('role', ['admin', 'member'])  // Only admins and members, not clients
 
-        console.log('🔍 DEBUG - Query error:', error)
-        console.log('🔍 DEBUG - Raw data:', data)
 
         if (error) {
             console.error('Error fetching workspace members:', error)
         }
 
         workspaceMembers = data || []
-        console.log('🔍 DEBUG - Workspace members final:', workspaceMembers)
-        console.log('🔍 DEBUG - Workspace members length:', workspaceMembers.length)
     }
 
     return (

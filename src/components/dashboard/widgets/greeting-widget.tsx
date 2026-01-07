@@ -1,7 +1,8 @@
 'use client'
 
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Sun, Moon, CloudSun } from "lucide-react"
+import { Sun, Moon, CloudSun, LucideIcon } from "lucide-react"
 
 interface GreetingWidgetProps {
     userName: string
@@ -10,21 +11,24 @@ interface GreetingWidgetProps {
 }
 
 export function GreetingWidget({ userName, pendingCount, productivityScore }: GreetingWidgetProps) {
-    const hour = new Date().getHours()
+    // Use state to avoid hydration mismatch - server and client may have different times
+    const [greeting, setGreeting] = useState("Hola")
+    const [Icon, setIcon] = useState<LucideIcon>(Sun)
 
-    let greeting = "Hola"
-    let Icon = Sun
+    useEffect(() => {
+        const hour = new Date().getHours()
 
-    if (hour < 12) {
-        greeting = "Buenos días"
-        Icon = Sun
-    } else if (hour < 20) {
-        greeting = "Buenas tardes"
-        Icon = CloudSun
-    } else {
-        greeting = "Buenas noches"
-        Icon = Moon
-    }
+        if (hour < 12) {
+            setGreeting("Buenos días")
+            setIcon(Sun)
+        } else if (hour < 20) {
+            setGreeting("Buenas tardes")
+            setIcon(CloudSun)
+        } else {
+            setGreeting("Buenas noches")
+            setIcon(Moon)
+        }
+    }, [])
 
     return (
         <motion.div

@@ -27,6 +27,7 @@ export default async function DashboardPage() {
         .limit(1)
         .single()
 
+
     const userName = user.email?.split('@')[0] || 'Usuario'
     const workspaceId = membership?.workspace_id || null
 

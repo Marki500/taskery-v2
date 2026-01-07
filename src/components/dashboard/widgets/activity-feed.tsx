@@ -8,10 +8,10 @@ import { Badge } from "@/components/ui/badge"
 import { Activity, CheckCircle2, MessageSquare, UserPlus, Clock } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
-import { ActivityLog, getWorkspaceActivity } from "@/app/(dashboard)/activity/actions"
+import { ActivityLog, getAllWorkspacesActivity } from "@/app/(dashboard)/activity/actions"
 
 interface ActivityFeedProps {
-    workspaceId: string
+    workspaceId?: string // Optional now - if not provided, shows all workspaces
 }
 
 export function ActivityFeed({ workspaceId }: ActivityFeedProps) {
@@ -19,11 +19,12 @@ export function ActivityFeed({ workspaceId }: ActivityFeedProps) {
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        getWorkspaceActivity(workspaceId)
+        // Always use getAllWorkspacesActivity to show activity from all workspaces
+        getAllWorkspacesActivity()
             .then(setActivities)
             .catch(console.error)
             .finally(() => setLoading(false))
-    }, [workspaceId])
+    }, [])
 
     const getIcon = (type: ActivityLog['actionType']) => {
         switch (type) {
